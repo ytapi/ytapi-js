@@ -1,0 +1,57 @@
+{
+  "name": "ytapi",
+  "version": "0.1.0",
+  "description": "JavaScript/TypeScript client for YTAPI: YouTube transcripts, video details, search, channels and playlists.",
+  "keywords": [
+    "youtube",
+    "transcript",
+    "captions",
+    "subtitles",
+    "youtube-transcript",
+    "ytapi",
+    "api-client"
+  ],
+  "license": "MIT",
+  "homepage": "https://docs.ytapi.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ytapi/ytapi-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ytapi/ytapi-js/issues"
+  },
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node --input-type=module -e \"import fs from 'node:fs'; fs.mkdirSync('dist/cjs',{recursive:true}); fs.writeFileSync('dist/cjs/package.json','{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
+    "test": "npm run build && node --test test/client.test.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,31 @@
+export { YTAPI } from "./client.js";
+export {
+  AuthError,
+  InsufficientCreditsError,
+  NotFoundError,
+  RateLimitedError,
+  ServerError,
+  YTAPIError,
+} from "./errors.js";
+export type {
+  BatchJob,
+  BatchSubmit,
+  BatchTask,
+  BatchTaskResult,
+  Channel,
+  ChannelLatest,
+  ChannelPlaylist,
+  ChannelPlaylistsPage,
+  ChannelVideo,
+  ChannelVideosPage,
+  ClientOptions,
+  PlaylistPage,
+  PlaylistVideo,
+  SearchItem,
+  SearchPage,
+  Suggestions,
+  Transcript,
+  TranscriptFormat,
+  VideoBasicInfo,
+  VideoInfo,
+} from "./types.js";
