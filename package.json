@@ -23,7 +23,7 @@
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "types": "./dist/cjs/index.d.ts",
   "exports": {
     ".": {
       "import": {
@@ -31,7 +31,7 @@
         "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/esm/index.d.ts",
+        "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
       }
     }
@@ -48,10 +48,14 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node --input-type=module -e \"import fs from 'node:fs'; fs.mkdirSync('dist/cjs',{recursive:true}); fs.writeFileSync('dist/cjs/package.json','{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
     "test": "npm run build && node --test test/client.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "typescript": "^5.8.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

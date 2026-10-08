@@ -9,7 +9,7 @@ JavaScript and TypeScript client for [YTAPI](https://ytapi.dev?utm_source=github
 ## Install
 
 ```bash
-npm install github:ytapi/ytapi-js
+npm install ytapi
 ```
 
 ## Quickstart
@@ -123,6 +123,10 @@ npm test
 ```
 
 The tests mock `fetch` and need no network or API key.
+
+## Releases
+
+The package is published to npm as [`ytapi`](https://www.npmjs.com/package/ytapi). Versions follow semver, and each one has a matching GitHub release.
 
 ## License
 
