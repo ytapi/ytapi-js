@@ -1,5 +1,5 @@
 {
-  "name": "ytapi",
+  "name": "@ytapi/sdk",
   "version": "0.1.0",
   "description": "JavaScript/TypeScript client for YTAPI: YouTube transcripts, video details, search, channels and playlists.",
   "keywords": [

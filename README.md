@@ -9,7 +9,7 @@ JavaScript and TypeScript client for [YTAPI](https://ytapi.dev?utm_source=github
 ## Install
 
 ```bash
-npm install ytapi
+npm install @ytapi/sdk
 ```
 
 ## Quickstart
@@ -17,7 +17,7 @@ npm install ytapi
 Get a key at [ytapi.dev](https://ytapi.dev/app/api-keys?utm_source=github). New accounts get 200 free credits, and no card is needed.
 
 ```ts
-import { YTAPI } from "ytapi";
+import { YTAPI } from "@ytapi/sdk";
 
 const api = new YTAPI(); // reads YTAPI_API_KEY (or YTAPI_KEY) from the environment
 const transcript = await api.getTranscript("dQw4w9WgXcQ");
@@ -30,7 +30,7 @@ if (typeof transcript !== "string") {
 
 By default you get the captions in the video's own language, as timed segments. A successful request uses 1 credit, and errors are free.
 
-CommonJS: `const { YTAPI } = require("ytapi");`
+CommonJS: `const { YTAPI } = require("@ytapi/sdk");`
 
 Keep the client on the server. An API key in browser code is visible to every visitor.
 
@@ -79,7 +79,7 @@ The iterators (`iterPlaylistVideos`, `iterChannelVideos`, `iterChannelPlaylists`
 ## Errors
 
 ```ts
-import { InsufficientCreditsError, NotFoundError, RateLimitedError, YTAPIError } from "ytapi";
+import { InsufficientCreditsError, NotFoundError, RateLimitedError, YTAPIError } from "@ytapi/sdk";
 
 try {
   await api.getTranscript("xxxxxxxxxxx");
@@ -126,7 +126,7 @@ The tests mock `fetch` and need no network or API key.
 
 ## Releases
 
-The package is published to npm as [`ytapi`](https://www.npmjs.com/package/ytapi). Versions follow semver, and each one has a matching GitHub release.
+The package is published to npm as [`@ytapi/sdk`](https://www.npmjs.com/package/@ytapi/sdk). Versions follow semver, and each one has a matching GitHub release.
 
 ## License
 
