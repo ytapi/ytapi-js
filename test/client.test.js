@@ -301,14 +301,34 @@ test("a timeout says so", async () => {
   await assert.rejects(api.getBasicInfo("abc"), /timed out after 10 ms/);
 });
 
-test("batch create is not retried after a network error", async () => {
+test("batch create retries a network error with the same key", async () => {
+  const keys = [];
   let calls = 0;
-  const api = client(async () => {
+  const api = client(async (url, init) => {
+    keys.push(init.headers["Idempotency-Key"]);
     calls += 1;
-    throw new Error("socket hang up");
+    if (calls === 1) throw new Error("socket hang up");
+    return jsonResponse({ id: "job1", status: "pending" }, 202);
   });
-  await assert.rejects(api.createBatch([{ type: "transcript", video_id: "abc" }]), YTAPIError);
-  assert.equal(calls, 1);
+  const job = await api.createBatch([{ type: "transcript", video_id: "abc" }]);
+  assert.equal(job.id, "job1");
+  assert.equal(keys.length, 2);
+  assert.match(keys[0], /^[0-9a-f-]{36}$/);
+  assert.equal(keys[0], keys[1]);
+});
+
+test("batch create uses the given key and a new key per call", async () => {
+  const keys = [];
+  const api = client(async (url, init) => {
+    keys.push(init.headers["Idempotency-Key"]);
+    return jsonResponse({ id: "job1" }, 202);
+  });
+  const task = [{ type: "transcript", video_id: "abc" }];
+  await api.createBatch(task, { idempotencyKey: "order-42" });
+  await api.createBatch(task);
+  await api.createBatch(task);
+  assert.equal(keys[0], "order-42");
+  assert.notEqual(keys[1], keys[2]);
 });
 
 test("the daily limit is thrown without waiting", async () => {
@@ -447,14 +467,14 @@ test("the CommonJS build loads", async () => {
   assert.equal(loaded.NotFoundError.name, "NotFoundError");
 });
 
-test("batch create retries 429 but not 5xx", async () => {
+test("batch create retries 429 and 5xx", async () => {
   let calls = 0;
   const failing = client(async () => {
     calls += 1;
     return jsonResponse({ error: { code: "upstream_error", message: "try again" } }, 503);
   });
   await assert.rejects(failing.createBatch([{ type: "transcript", video_id: "abc" }]), ServerError);
-  assert.equal(calls, 1); // no retry: the job may already exist
+  assert.equal(calls, 3); // 1 try + maxRetries; safe because every attempt carries the same key
 
   const replies = [
     jsonResponse({ error: { code: "rate_limited", message: "slow down" } }, 429),
