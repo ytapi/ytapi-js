@@ -34,7 +34,19 @@ import type {
   VideoInfo,
 } from "./types.js";
 
-const USER_AGENT = "ytapi-js/0.1.0 (+https://docs.ytapi.dev)";
+const USER_AGENT = "ytapi-js/0.2.0 (+https://docs.ytapi.dev)";
+
+// A v4 UUID for Idempotency-Key. Web Crypto where the runtime has it (Node
+// 19+, Bun, Deno, Workers, browsers); Node 18 has no global crypto, so fall
+// back to Math.random, which is enough for a per-request key.
+function randomUUID(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 const ENV_KEYS = ["YTAPI_API_KEY", "YTAPI_KEY"];
 // A free account's daily limit answers 429 with Retry-After until 00:00 UTC.
 // Waiting that long inside a call would hang the caller, so it is thrown.
@@ -233,13 +245,22 @@ export class YTAPI {
   }
 
   /** Start a batch of up to 100 tasks. Returns the job id; poll it with `pollBatch`. */
-  createBatch(tasks: BatchTask[], options: { concurrency?: number } = {}): Promise<BatchSubmit> {
+  /**
+   * Start a batch of up to 100 tasks; poll it with `pollBatch`.
+   *
+   * Every call sends an `Idempotency-Key` (a new UUID unless you pass
+   * `idempotencyKey`), so retries after a 5xx or a dropped connection return
+   * the same job instead of starting and billing a second one. Pass your own
+   * key to make retrying the whole call safe too.
+   */
+  createBatch(
+    tasks: BatchTask[],
+    options: { concurrency?: number; idempotencyKey?: string } = {},
+  ): Promise<BatchSubmit> {
     const body: Record<string, unknown> = { tasks };
     if (options.concurrency !== undefined) body.concurrency = options.concurrency;
-    // A 5xx or a dropped connection can come after the job was created, so a
-    // retry could start a second batch. Only 429 (nothing was created) is
-    // retried here.
-    return this.request("POST", "/v1/batch", { json: body, retryServerErrors: false });
+    const key = options.idempotencyKey ?? randomUUID();
+    return this.request("POST", "/v1/batch", { json: body, headers: { "Idempotency-Key": key } });
   }
 
   /** Status of a batch job. Free. */
@@ -273,6 +294,7 @@ export class YTAPI {
       json?: Record<string, unknown>;
       asText?: boolean;
       retryServerErrors?: boolean;
+      headers?: Record<string, string>;
     } = {},
   ): Promise<any> {
     const url = new URL(this.baseUrl + path);
@@ -283,6 +305,7 @@ export class YTAPI {
       Authorization: `Bearer ${this.apiKey}`,
       Accept: "application/json, text/plain, text/vtt, text/markdown",
       "User-Agent": USER_AGENT,
+      ...options.headers,
     };
     let body: string | undefined;
     if (options.json) {
