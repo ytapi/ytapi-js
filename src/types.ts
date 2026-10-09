@@ -69,6 +69,27 @@ export interface Chapter {
   time_description?: string;
 }
 
+export interface DescriptionLink {
+  text?: string;
+  url?: string;
+}
+
+export interface MusicTrack {
+  title?: string;
+  artist?: string;
+  album?: string;
+}
+
+export interface RelatedVideo {
+  video_id?: string;
+  title?: string;
+  channel_title?: string;
+  channel_id?: string;
+  length_text?: string;
+  view_count_text?: string;
+  published_text?: string;
+}
+
 export interface VideoInfo {
   video_id?: string;
   title?: string;
@@ -76,18 +97,39 @@ export interface VideoInfo {
   length_seconds?: number;
   view_count?: number;
   like_count?: number;
+  /** Rounded by YouTube ("3.3K" is 3300); omitted when comments are off. */
+  comment_count?: number;
+  comment_count_text?: string;
   published?: number;
   keywords?: string[];
+  is_live?: boolean;
+  /** A scheduled live stream or premiere that hasn't started. */
+  is_upcoming?: boolean;
+  is_live_content?: boolean;
+  /** Unix start time of an upcoming stream or premiere. */
+  scheduled_start?: number;
   channel?: {
     id?: string;
     title?: string;
     url?: string;
     subscribers?: string;
+    /** `subscribers` as an approximate number. */
+    subscriber_count?: number;
+    is_verified?: boolean;
     avatar_url?: string;
   };
   thumbnails?: Thumbnail[];
   available_languages?: CaptionLanguage[];
   chapters?: Chapter[];
+  /** YouTube's own AI summary, when it shows one. */
+  ai_summary?: string;
+  /** YouTube's "How this was made" note. */
+  content_disclosure?: string;
+  hashtags?: string[];
+  links?: DescriptionLink[];
+  music?: MusicTrack[];
+  /** Up to 20 videos YouTube suggests next to this one. */
+  related?: RelatedVideo[];
 }
 
 export interface PlaylistVideo {
