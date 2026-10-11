@@ -183,9 +183,15 @@ export class YTAPI {
   }
 
   /** Every reply to one comment, starting from its `replies_cursor`. */
-  async *iterCommentReplies(videoId: string, repliesCursor: string): AsyncGenerator<Comment> {
+  /** Every reply to one comment. Yields nothing when the comment has no replies (no cursor). */
+  async *iterCommentReplies(
+    videoId: string,
+    repliesCursor: string | null | undefined,
+  ): AsyncGenerator<Comment> {
+    if (!repliesCursor) return;
+    const first = repliesCursor;
     yield* pages(
-      (cursor) => this.getCommentReplies(videoId, cursor ?? repliesCursor),
+      (cursor) => this.getCommentReplies(videoId, cursor ?? first),
       (page) => page.comments,
     );
   }

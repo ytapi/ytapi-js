@@ -453,6 +453,40 @@ test("comment iterators follow the cursors", async () => {
   assert.deepEqual(replies, ["ra", "rb"]);
 });
 
+test("comments and heatmap keep their 404 codes", async () => {
+  for (const [code, call] of [
+    ["comments_disabled", (api) => api.getComments("vid")],
+    ["heatmap_unavailable", (api) => api.getHeatmap("vid")],
+  ]) {
+    const api = client(async () => jsonResponse({ error: { code, message: code } }, 404));
+    await assert.rejects(call(api), (err) => err instanceof NotFoundError && err.code === code);
+  }
+});
+
+test("comment iterators keep the sort and handle empty pages", async () => {
+  const seen = [];
+  const pages = {
+    "/comments?sort=newest": { has_more: true, next_cursor: "c2", comments: [{ id: "a" }] },
+    "/comments?sort=newest&cursor=c2": { has_more: false, comments: [{ id: "b" }] },
+    "/comments?sort=top": { has_more: false, next_cursor: null, comments: [] },
+  };
+  const api = client(async (url) => {
+    const tail = String(url).split("/v1/videos/vid")[1];
+    seen.push(tail);
+    return jsonResponse(pages[tail]);
+  });
+  const newest = [];
+  for await (const c of api.iterComments("vid", { sort: "newest" })) newest.push(c.id);
+  const empty = [];
+  for await (const c of api.iterComments("vid", { sort: "top" })) empty.push(c);
+  const noReplies = [];
+  for await (const c of api.iterCommentReplies("vid", undefined)) noReplies.push(c);
+  assert.deepEqual(newest, ["a", "b"]);
+  assert.deepEqual(empty, []);
+  assert.deepEqual(noReplies, []);
+  assert.equal(seen.length, 3);
+});
+
 test("pollBatch returns when the job finishes", async () => {
   const statuses = ["pending", "processing", "completed"];
   const slept = [];
