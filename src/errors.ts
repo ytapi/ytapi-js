@@ -31,7 +31,10 @@ export class AuthError extends YTAPIError {}
 /** 402. The credit balance cannot cover the call. */
 export class InsufficientCreditsError extends YTAPIError {}
 
-/** 404. `code` is captions_disabled, language_not_found, video_unavailable, or another not-found code. */
+/**
+ * 404. `code` is captions_disabled, language_not_found, video_unavailable,
+ * comments_disabled, heatmap_unavailable, or another not-found code.
+ */
 export class NotFoundError extends YTAPIError {}
 
 /**
