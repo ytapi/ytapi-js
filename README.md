@@ -1,6 +1,6 @@
 # YTAPI JavaScript client
 
-JavaScript and TypeScript client for [YTAPI](https://ytapi.dev?utm_source=github): YouTube transcripts, video details, search, channels and playlists over one HTTP API. It works from servers, serverless functions and edge runtimes, where fetching YouTube directly tends to get blocked.
+JavaScript and TypeScript client for [YTAPI](https://ytapi.dev?utm_source=github): YouTube transcripts, video details, comments, search, channels and playlists over one HTTP API. It works from servers, serverless functions and edge runtimes, where fetching YouTube directly tends to get blocked.
 
 - No runtime dependencies. Node 18+ (tested), and other runtimes with `fetch`, such as Bun, Deno or Cloudflare Workers (pass `apiKey` where there is no `process.env`). ESM and CommonJS.
 - Full TypeScript types, typed errors, automatic retries and async iterators for paging.
@@ -47,6 +47,21 @@ const basic = await api.getBasicInfo("dQw4w9WgXcQ");
 // 1 credit: description, counts, chapters and more.
 const info = await api.getVideoInfo("dQw4w9WgXcQ");
 
+// Comments, top or newest first: 1 credit per page of about 20.
+const comments = await api.getComments("dQw4w9WgXcQ", { sort: "top" });
+for (const c of comments.comments ?? []) console.log(c.like_count, c.author?.name, c.text);
+// A comment's replies, from its replies_cursor.
+const first = comments.comments?.[0];
+if (first?.replies_cursor) {
+  for await (const reply of api.iterCommentReplies("dQw4w9WgXcQ", first.replies_cursor)) {
+    console.log("  ", reply.text);
+  }
+}
+
+// The "most replayed" graph: 1 credit; a free NotFoundError when a video has none.
+const heatmap = await api.getHeatmap("dQw4w9WgXcQ");
+for (const peak of heatmap.peaks ?? []) console.log(peak.start_seconds, peak.intensity);
+
 // Channels take an @handle, a channel ID (UC...) or a URL.
 const channel = await api.getChannel("@3blue1brown");
 for await (const video of api.iterChannelVideos("@3blue1brown", { sortBy: "popular" })) {
@@ -74,7 +89,7 @@ const done = await api.pollBatch(job.id!, { timeoutMs: 120_000 });
 console.log(done.successful, done.credits_deducted);
 ```
 
-The iterators (`iterPlaylistVideos`, `iterChannelVideos`, `iterChannelPlaylists`, `iterSearch`) follow `next_cursor` for you. Each page is a request and uses a credit. In a batch, each successful task uses 1 credit and failed tasks are free.
+The iterators (`iterPlaylistVideos`, `iterChannelVideos`, `iterChannelPlaylists`, `iterSearch`, `iterComments`, `iterCommentReplies`) follow `next_cursor` for you. Each page is a request and uses a credit. In a batch, each successful task uses 1 credit and failed tasks are free.
 
 ## Errors
 
@@ -85,7 +100,7 @@ try {
   await api.getTranscript("xxxxxxxxxxx");
 } catch (err) {
   if (err instanceof NotFoundError) {
-    console.log(err.code); // captions_disabled, language_not_found, video_unavailable, ...
+    console.log(err.code); // captions_disabled, comments_disabled, video_unavailable, ...
   } else if (err instanceof RateLimitedError) {
     console.log(err.code, err.retryAfter); // rate_limited or daily_limit_exceeded
   } else if (err instanceof InsufficientCreditsError) {

@@ -16,6 +16,7 @@ export type TrackPolicy = "manual_first" | "asr_first" | "exact_only";
 export type SearchType = "video" | "channel" | "playlist" | "shorts" | "movie";
 
 export type SortBy = "newest" | "popular" | "oldest";
+export type CommentSort = "top" | "newest";
 export type UploadDate = "hour" | "today" | "week" | "month" | "year";
 export type DurationFilter = "short" | "medium" | "long";
 export type SearchSort = "relevance" | "rating" | "upload_date" | "view_count";
@@ -130,6 +131,69 @@ export interface VideoInfo {
   music?: MusicTrack[];
   /** Up to 20 videos YouTube suggests next to this one. */
   related?: RelatedVideo[];
+}
+
+export interface HeatmapPeak {
+  start_seconds?: number;
+  end_seconds?: number;
+  /** 0 to 1, relative to the video's own peak. */
+  intensity?: number;
+  /** "Most replayed" on YouTube's own marker. */
+  label?: string;
+}
+
+export interface HeatmapPoint {
+  start_seconds?: number;
+  end_seconds?: number;
+  intensity?: number;
+}
+
+/** YouTube's "most replayed" graph, condensed to 20 parts. */
+export interface Heatmap {
+  video_id?: string;
+  length_seconds?: number;
+  most_replayed?: HeatmapPeak;
+  /** Up to 5, in time order. */
+  peaks?: HeatmapPeak[];
+  curve?: HeatmapPoint[];
+}
+
+export interface CommentAuthor {
+  name?: string;
+  channel_id?: string;
+  avatar_url?: string;
+  is_channel_owner?: boolean;
+  is_verified?: boolean;
+  is_artist?: boolean;
+}
+
+export interface Comment {
+  id?: string;
+  text?: string;
+  author?: CommentAuthor;
+  /** YouTube's rounded figure: "12K" is 12000. */
+  like_count?: number;
+  like_count_text?: string;
+  reply_count?: number;
+  /** Relative, such as "3 years ago". */
+  published_text?: string;
+  is_edited?: boolean;
+  is_pinned?: boolean;
+  is_hearted?: boolean;
+  /** Pass to getCommentReplies; present only when the comment has replies. */
+  replies_cursor?: string;
+}
+
+export interface CommentsPage {
+  video_id?: string;
+  /** Absent on pages of replies. */
+  sort?: CommentSort;
+  /** The video's total, first page only; rounded by YouTube. */
+  comment_count?: number;
+  comment_count_text?: string;
+  comments?: Comment[];
+  has_more?: boolean;
+  next_cursor?: string | null;
 }
 
 export interface PlaylistVideo {

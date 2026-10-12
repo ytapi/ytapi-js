@@ -17,7 +17,11 @@ import type {
   ChannelVideo,
   ChannelVideosPage,
   ClientOptions,
+  Comment,
+  CommentSort,
+  CommentsPage,
   DurationFilter,
+  Heatmap,
   PlaylistPage,
   PlaylistVideo,
   SearchItem,
@@ -34,7 +38,7 @@ import type {
   VideoInfo,
 } from "./types.js";
 
-const USER_AGENT = "ytapi-js/0.2.0 (+https://docs.ytapi.dev)";
+const USER_AGENT = "ytapi-js/0.3.0 (+https://docs.ytapi.dev)";
 
 // A v4 UUID for Idempotency-Key. Web Crypto where the runtime has it (Node
 // 19+, Bun, Deno, Workers, browsers); Node 18 has no global crypto, so fall
@@ -132,6 +136,64 @@ export class YTAPI {
   /** Full metadata, including description, counts and chapters. 1 credit. */
   getVideoInfo(videoId: string): Promise<VideoInfo> {
     return this.request("GET", `/v1/videos/${seg(videoId)}/video-info`);
+  }
+
+  /**
+   * The "most replayed" graph: peaks and a 20-part curve. 1 credit. Many
+   * videos have none; that throws `NotFoundError` with code
+   * `heatmap_unavailable` and costs nothing.
+   */
+  getHeatmap(videoId: string): Promise<Heatmap> {
+    return this.request("GET", `/v1/videos/${seg(videoId)}/heatmap`);
+  }
+
+  /**
+   * One page of comments, about 20, top (default) or newest first. 1 credit
+   * per page. Comments turned off throw `NotFoundError` with code
+   * `comments_disabled`.
+   */
+  getComments(
+    videoId: string,
+    options: { sort?: CommentSort; cursor?: string } = {},
+  ): Promise<CommentsPage> {
+    return this.request("GET", `/v1/videos/${seg(videoId)}/comments`, {
+      query: { sort: options.sort, cursor: options.cursor },
+    });
+  }
+
+  /** Every top-level comment, following `next_cursor`. Each page uses a credit. */
+  async *iterComments(
+    videoId: string,
+    options: { sort?: CommentSort } = {},
+  ): AsyncGenerator<Comment> {
+    yield* pages(
+      (cursor) => this.getComments(videoId, { sort: options.sort, cursor }),
+      (page) => page.comments,
+    );
+  }
+
+  /**
+   * One page of replies. `cursor` is a comment's `replies_cursor`, then the
+   * page's `next_cursor`. 1 credit per page.
+   */
+  getCommentReplies(videoId: string, cursor: string): Promise<CommentsPage> {
+    return this.request("GET", `/v1/videos/${seg(videoId)}/comments/replies`, {
+      query: { cursor },
+    });
+  }
+
+  /** Every reply to one comment, starting from its `replies_cursor`. */
+  /** Every reply to one comment. Yields nothing when the comment has no replies (no cursor). */
+  async *iterCommentReplies(
+    videoId: string,
+    repliesCursor: string | null | undefined,
+  ): AsyncGenerator<Comment> {
+    if (!repliesCursor) return;
+    const first = repliesCursor;
+    yield* pages(
+      (cursor) => this.getCommentReplies(videoId, cursor ?? first),
+      (page) => page.comments,
+    );
   }
 
   /** One page of a playlist. Later pages carry videos only. 1 credit per page. */

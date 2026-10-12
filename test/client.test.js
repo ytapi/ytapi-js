@@ -129,6 +129,9 @@ test("each read endpoint uses the documented path", async () => {
   });
   await api.getSuggestions("next");
   await api.getBatch("batch_1");
+  await api.getHeatmap("kCc8FmEb1nY");
+  await api.getComments("kCc8FmEb1nY", { sort: "newest", cursor: "k1" });
+  await api.getCommentReplies("kCc8FmEb1nY", "r1");
 
   const paths = seen.map(([, url]) => url.split("?")[0]);
   assert.deepEqual(paths, [
@@ -142,7 +145,13 @@ test("each read endpoint uses the documented path", async () => {
     "https://api.ytapi.dev/v1/search",
     "https://api.ytapi.dev/v1/search/suggestions",
     "https://api.ytapi.dev/v1/batch/batch_1",
+    "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/heatmap",
+    "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/comments",
+    "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/comments/replies",
   ]);
+  assert.equal(seen[11][1].includes("sort=newest"), true);
+  assert.equal(seen[11][1].includes("cursor=k1"), true);
+  assert.equal(seen[12][1].endsWith("?cursor=r1"), true);
   assert.equal(seen[2][1].includes("cursor=c1"), true);
   assert.equal(seen[5][1].includes("sort_by=popular"), true);
   assert.equal(seen[7][1].includes("upload_date=month"), true);
@@ -426,6 +435,56 @@ test("search and channel iterators use the item keys", async () => {
   assert.equal(hits[0].id, "vid");
   assert.equal(uploads[0].title, "upload");
   assert.equal(lists[0].playlist_id, "PLx");
+});
+
+test("comment iterators follow the cursors", async () => {
+  const pages = {
+    "/comments": { has_more: true, next_cursor: "c2", comments: [{ id: "a" }] },
+    "/comments?cursor=c2": { has_more: false, next_cursor: null, comments: [{ id: "b" }] },
+    "/comments/replies?cursor=r1": { has_more: true, next_cursor: "r2", comments: [{ id: "ra" }] },
+    "/comments/replies?cursor=r2": { has_more: false, comments: [{ id: "rb" }] },
+  };
+  const api = client(async (url) => jsonResponse(pages[String(url).split("/v1/videos/vid")[1]]));
+  const comments = [];
+  for await (const c of api.iterComments("vid")) comments.push(c.id);
+  const replies = [];
+  for await (const c of api.iterCommentReplies("vid", "r1")) replies.push(c.id);
+  assert.deepEqual(comments, ["a", "b"]);
+  assert.deepEqual(replies, ["ra", "rb"]);
+});
+
+test("comments and heatmap keep their 404 codes", async () => {
+  for (const [code, call] of [
+    ["comments_disabled", (api) => api.getComments("vid")],
+    ["heatmap_unavailable", (api) => api.getHeatmap("vid")],
+  ]) {
+    const api = client(async () => jsonResponse({ error: { code, message: code } }, 404));
+    await assert.rejects(call(api), (err) => err instanceof NotFoundError && err.code === code);
+  }
+});
+
+test("comment iterators keep the sort and handle empty pages", async () => {
+  const seen = [];
+  const pages = {
+    "/comments?sort=newest": { has_more: true, next_cursor: "c2", comments: [{ id: "a" }] },
+    "/comments?sort=newest&cursor=c2": { has_more: false, comments: [{ id: "b" }] },
+    "/comments?sort=top": { has_more: false, next_cursor: null, comments: [] },
+  };
+  const api = client(async (url) => {
+    const tail = String(url).split("/v1/videos/vid")[1];
+    seen.push(tail);
+    return jsonResponse(pages[tail]);
+  });
+  const newest = [];
+  for await (const c of api.iterComments("vid", { sort: "newest" })) newest.push(c.id);
+  const empty = [];
+  for await (const c of api.iterComments("vid", { sort: "top" })) empty.push(c);
+  const noReplies = [];
+  for await (const c of api.iterCommentReplies("vid", undefined)) noReplies.push(c);
+  assert.deepEqual(newest, ["a", "b"]);
+  assert.deepEqual(empty, []);
+  assert.deepEqual(noReplies, []);
+  assert.equal(seen.length, 3);
 });
 
 test("pollBatch returns when the job finishes", async () => {
