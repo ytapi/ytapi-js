@@ -1,6 +1,6 @@
 # YTAPI JavaScript client
 
-JavaScript and TypeScript client for [YTAPI](https://ytapi.dev?utm_source=github): YouTube transcripts, video details, comments, search, channels and playlists over one HTTP API. It works from servers, serverless functions and edge runtimes, where fetching YouTube directly tends to get blocked.
+JavaScript and TypeScript client for [YTAPI](https://ytapi.dev/?utm_source=github&utm_medium=readme): YouTube transcripts, video details, comments, search, channels and playlists over one HTTP API. It works from servers, serverless functions and edge runtimes, where fetching YouTube directly tends to get blocked.
 
 - No runtime dependencies. Node 18+ (tested), and other runtimes with `fetch`, such as Bun, Deno or Cloudflare Workers (pass `apiKey` where there is no `process.env`). ESM and CommonJS.
 - Full TypeScript types, typed errors, automatic retries and async iterators for paging.
@@ -14,7 +14,7 @@ npm install @ytapi/sdk
 
 ## Quickstart
 
-Get a key at [ytapi.dev](https://ytapi.dev/app/api-keys?utm_source=github). New accounts get 200 free credits, and no card is needed.
+Get a key at [ytapi.dev](https://ytapi.dev/app/api-keys?utm_source=github&utm_medium=readme). New accounts get 200 free credits, and no card is needed.
 
 ```ts
 import { YTAPI } from "@ytapi/sdk";
