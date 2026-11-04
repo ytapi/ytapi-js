@@ -80,6 +80,10 @@ for (const hit of page.items ?? []) console.log(hit.title);
 // Search suggestions are free.
 console.log((await api.getSuggestions("nextjs")).suggestions);
 
+// Check account balance and daily limits (0 credits).
+const balance = await api.getBalance();
+console.log(balance.tier, balance.credit_balance, balance.daily_quota);
+
 // Batch: up to 100 transcript or basic_info tasks per job.
 const job = await api.createBatch([
   { id: "a", type: "transcript", video_id: "dQw4w9WgXcQ", format: "text" },

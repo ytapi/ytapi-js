@@ -304,6 +304,18 @@ export interface Suggestions {
   suggestions?: string[];
 }
 
+export interface BalanceDailyQuota {
+  limit: number;
+  remaining: number;
+  resets_in_seconds: number;
+}
+
+export interface BalanceResponse {
+  tier: "free" | "paid" | string;
+  credit_balance: number | null;
+  daily_quota: BalanceDailyQuota | null;
+}
+
 export interface BatchTask {
   id?: string;
   type: "transcript" | "basic_info";
