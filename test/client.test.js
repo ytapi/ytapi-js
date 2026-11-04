@@ -129,6 +129,7 @@ test("each read endpoint uses the documented path", async () => {
   });
   await api.getSuggestions("next");
   await api.getBatch("batch_1");
+  await api.getBalance();
   await api.getHeatmap("kCc8FmEb1nY");
   await api.getComments("kCc8FmEb1nY", { sort: "newest", cursor: "k1" });
   await api.getCommentReplies("kCc8FmEb1nY", "r1");
@@ -145,17 +146,34 @@ test("each read endpoint uses the documented path", async () => {
     "https://api.ytapi.dev/v1/search",
     "https://api.ytapi.dev/v1/search/suggestions",
     "https://api.ytapi.dev/v1/batch/batch_1",
+    "https://api.ytapi.dev/v1/balance",
     "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/heatmap",
     "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/comments",
     "https://api.ytapi.dev/v1/videos/kCc8FmEb1nY/comments/replies",
   ]);
-  assert.equal(seen[11][1].includes("sort=newest"), true);
-  assert.equal(seen[11][1].includes("cursor=k1"), true);
-  assert.equal(seen[12][1].endsWith("?cursor=r1"), true);
+  assert.equal(seen[12][1].includes("sort=newest"), true);
+  assert.equal(seen[12][1].includes("cursor=k1"), true);
+  assert.equal(seen[13][1].endsWith("?cursor=r1"), true);
   assert.equal(seen[2][1].includes("cursor=c1"), true);
   assert.equal(seen[5][1].includes("sort_by=popular"), true);
   assert.equal(seen[7][1].includes("upload_date=month"), true);
   assert.equal(seen.every(([method]) => method === "GET"), true);
+});
+
+test("getBalance returns tier and credit balance", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(init.method, "GET");
+    assert.equal(String(url), "https://api.ytapi.dev/v1/balance");
+    return jsonResponse({
+      tier: "paid",
+      credit_balance: 303,
+      daily_quota: null,
+    });
+  });
+  const balance = await api.getBalance();
+  assert.equal(balance.tier, "paid");
+  assert.equal(balance.credit_balance, 303);
+  assert.equal(balance.daily_quota, null);
 });
 
 test("batch create accepts 202 and sends concurrency", async () => {

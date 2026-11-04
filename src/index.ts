@@ -8,6 +8,8 @@ export {
   YTAPIError,
 } from "./errors.js";
 export type {
+  BalanceDailyQuota,
+  BalanceResponse,
   BatchJob,
   BatchSubmit,
   BatchTask,

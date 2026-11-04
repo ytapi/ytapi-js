@@ -7,6 +7,8 @@ import {
   YTAPIError,
 } from "./errors.js";
 import type {
+  BalanceDailyQuota,
+  BalanceResponse,
   BatchJob,
   BatchSubmit,
   BatchTask,
@@ -38,7 +40,7 @@ import type {
   VideoInfo,
 } from "./types.js";
 
-const USER_AGENT = "ytapi-js/0.3.0 (+https://docs.ytapi.dev)";
+const USER_AGENT = "ytapi-js/0.4.0 (+https://docs.ytapi.dev)";
 
 // A v4 UUID for Idempotency-Key. Web Crypto where the runtime has it (Node
 // 19+, Bun, Deno, Workers, browsers); Node 18 has no global crypto, so fall
@@ -304,6 +306,11 @@ export class YTAPI {
   /** Autocomplete strings. Costs 0 credits. */
   getSuggestions(query: string): Promise<Suggestions> {
     return this.request("GET", "/v1/search/suggestions", { query: { q: query } });
+  }
+
+  /** Account credit balance, tier, and free-tier daily quota. Costs 0 credits. */
+  getBalance(): Promise<BalanceResponse> {
+    return this.request("GET", "/v1/balance");
   }
 
   /** Start a batch of up to 100 tasks. Returns the job id; poll it with `pollBatch`. */
